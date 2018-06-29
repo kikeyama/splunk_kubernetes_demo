@@ -1,0 +1,439 @@
+<dashboard>
+  <label>Kubernetes Overview</label>
+  <row>
+    <panel>
+      <title>Nodes Count</title>
+      <single>
+        <search>
+          <query>`k8s-event-index` sourcetype="kube:objects:nodes" 
+| stats dc(metadata.name) as nodes_count</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="colorBy">value</option>
+        <option name="colorMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="rangeValues">[0,30,70,100]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">absolute</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">0</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Namespaces Count</title>
+      <single>
+        <search>
+          <query>`k8s-event-index` sourcetype="kube:objects:namespaces" 
+| stats dc(metadata.name) as namespaces_count</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="colorBy">value</option>
+        <option name="colorMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="rangeValues">[0,30,70,100]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">absolute</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">0</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Services Count</title>
+      <single>
+        <search>
+          <query>`k8s-event-index` sourcetype="kube:objects:services" 
+| stats dc(metadata.name) as services_count</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="colorBy">value</option>
+        <option name="colorMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="rangeValues">[0,30,70,100]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">absolute</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">0</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Pods Count</title>
+      <single>
+        <search>
+          <query>`k8s-event-index` sourcetype="kube:objects:pods" 
+| stats dc(metadata.name) as pods_count</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="colorBy">value</option>
+        <option name="colorMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="numberPrecision">0</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="rangeValues">[0,30,70,100]</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="showSparkline">1</option>
+        <option name="showTrendIndicator">1</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+        <option name="trendColorInterpretation">standard</option>
+        <option name="trendDisplayMode">absolute</option>
+        <option name="unitPosition">after</option>
+        <option name="useColors">0</option>
+        <option name="useThousandSeparators">1</option>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <html>
+        <h1 align="center">Nodes</h1>
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Nodes Overview</title>
+      <table>
+        <title>Click to Show Node Detail</title>
+        <search>
+          <!--          <done>
+            <set token="latest_time">$job.indexLatestTime$</set>
+          </done> -->
+          <query>`k8s-event-index` sourcetype="kube:objects:nodes" 
+| eval conditions = mvzip('status.conditions{}.type', 'status.conditions{}.status', ":") 
+| mvexpand conditions 
+| rex field=conditions "(?P&lt;type&gt;[^\:]+):(?P&lt;status&gt;[^\s]+$)" 
+| search type="Ready" 
+| eval status = if(status="True", "Active", "Inactive"), role = if('spec.taints{}.key'="node-role.kubernetes.io/master", "Master", "(None)") 
+| stats latest(status) as Status latest(role) as Role latest(metadata.creationTimestamp) as Created by metadata.name metadata.uid 
+| rename metadata.name as Name metadata.uid as UUID</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">row</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+        <drilldown>
+          <set token="node_uuid">$row.UUID$</set>
+          <set token="node_name">$row.Name$</set>
+        </drilldown>
+      </table>
+    </panel>
+    <panel depends="$node_uuid$">
+      <title>Node Detail</title>
+      <table>
+        <title>Details of Node: $node_name$</title>
+        <search>
+          <query>`k8s-event-index` sourcetype="kube:objects:nodes" metadata.uid="$node_uuid$" 
+| head 1
+| eval conditions = mvzip('status.conditions{}.type', 'status.conditions{}.status', ":"), conditions = mvzip(conditions, 'status.conditions{}.message', ":"), condition = mvjoin(conditions, "|") 
+| rex field=condition "(?P&lt;condition_1&gt;[^\|]+)\|(?P&lt;condition_2&gt;[^\|]+)\|(?P&lt;condition_3&gt;[^\|]+)\|(?P&lt;condition_4&gt;[^\|]+)\|(?P&lt;condition_5&gt;[^$$]+)$$" 
+| eval Role = if('spec.taints{}.key'="node-role.kubernetes.io/master", "Master", "(None)")
+| table metadata.name metadata.uid metadata.creationTimestamp Role status.nodeInfo.osImage status.nodeInfo.kernelVersion status.nodeInfo.kubeletVersion status.allocatable.cpu status.allocatable.ephemeral-storage status.allocatable.memory status.allocatable.pods condition_* 
+| foreach condition_* 
+    [rex field=&lt;&lt;FIELD&gt;&gt; "(?P&lt;type&gt;[^\:]+):(?P&lt;status&gt;[^:]+):(?P&lt;message&gt;[^$$]+$$)" 
+    | eval {type} = status . " (" . message . ")" 
+    | fields - type - status - message - &lt;&lt;FIELD&gt;&gt;] 
+| rename metadata.name as Name metadata.creationTimestamp as Created metadata.uid as UUID nodeInfo.osImage as OS status.nodeInfo.kernelVersion as "Kernel Version" status.allocatable.cpu as "Allocatable CPU" status.allocatable.ephemeral-storage as "Allocatable Storage" status.allocatable.memory as "Allocatable Memory" status.allocatable.pods as "Allocatable Pods" status.nodeInfo.kubeletVersion as "Kubelet Version"
+| transpose 
+| rename column as Key "row 1" as Value</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">20</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <html>
+        <h1 align="center">Namespace</h1>
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Namespace Overview</title>
+      <table>
+        <title>Click to Show Namespace Detail</title>
+        <search>
+          <query>`k8s-event-index` sourcetype="kube:objects:namespaces" 
+| stats latest(status.phase) as Status latest(metadata.creationTimestamp) as Created by metadata.name metadata.uid 
+| rename metadata.name as Name metadata.uid as UUID</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">row</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+        <drilldown>
+          <set token="namespace_uuid">$row.UUID$</set>
+          <set token="namespace_name">$row.Name$</set>
+        </drilldown>
+      </table>
+    </panel>
+    <panel depends="$namespace_name$">
+      <title>Namespace Detail</title>
+      <table>
+        <title>Details of Namespace: $namespace_name$</title>
+        <search>
+          <query>`k8s-event-index` sourcetype="kube:objects:namespaces" metadata.uid="$namespace_uuid$" 
+| head 1 
+| eval namespace = 'metadata.name' 
+| join namespace type=outer 
+    [search `k8s-event-index` sourcetype="kube:objects:pods" metadata.namespace="$namespace_name$" 
+    | stats dc(metadata.uid) as "Pods Count" by metadata.namespace 
+    | rename metadata.namespace as namespace]
+| join namespace type=outer 
+    [search `k8s-event-index` sourcetype="kube:objects:services" metadata.namespace="$namespace_name$" 
+    | stats dc(metadata.uid) as "Services Count" by metadata.namespace 
+    | rename metadata.namespace as namespace] 
+| join namespace type=outer 
+    [search `k8s-event-index` sourcetype="kube:objects:deployments" metadata.namespace="$namespace_name$" 
+    | stats dc(metadata.uid) as "Deployments Count" by metadata.namespace 
+    | rename metadata.namespace as namespace] 
+| table metadata.name metadata.uid metadata.creationTimestamp spec.finalizers{} status.phase "Services Count" "Deployments Count" "Pods Count" 
+| rename metadata.name as Name metadata.creationTimestamp as Created metadata.uid as UUID spec.finalizers{} as Finalizers status.phase as Status
+| transpose 
+| rename column as Key "row 1" as Value</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">20</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <html>
+        <h1 align="center">Services</h1>
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Services Overview</title>
+      <table>
+        <title>Click to Show Namespace Detail</title>
+        <search>
+          <query>`k8s-event-index` sourcetype="kube:objects:services" 
+| eval ports = mvzip('spec.ports{}.name', 'spec.ports{}.port', "/port:"), ports = mvzip(ports, 'spec.ports{}.targetPort', "/targetPort:"), ports = mvzip(ports, 'spec.ports{}.nodePort', "/nodePort:"), ports = mvzip(ports, 'spec.ports{}.protocol', "/protocol:") 
+| stats latest(spec.type) as Type latest(metadata.creationTimestamp) as Created by metadata.namespace metadata.name metadata.uid 
+| rename metadata.namespace as Namespace metadata.name as Name metadata.uid as UUID</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">20</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">row</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+        <drilldown>
+          <set token="service_uuid">$row.UUID$</set>
+          <set token="service_name">$row.Name$</set>
+        </drilldown>
+      </table>
+    </panel>
+    <panel depends="$service_uuid$">
+      <title>Service Detail</title>
+      <table>
+        <title>Details of Service: $service_name$</title>
+        <search>
+          <query>`k8s-event-index` sourcetype="kube:objects:services" metadata.uid="$service_uuid$" 
+| head 1 
+| rename metadata.name as Name metadata.namespace as Namespace metadata.uid as UUID metadata.creationTimestamp as Created metadata.labels{}.app as Apps 'metadata.labels{}.name' as Label spec.clusterIP as "Cluster IP" spec.externalTrafficPolicy as "Traffic Policy" spec.type as Type 
+| foreach spec.selector.* 
+    [eval selector_&lt;&lt;MATCHSTR&gt;&gt; = '&lt;&lt;FIELD&gt;&gt;'] 
+| foreach metadata.labels.* 
+    [eval label_&lt;&lt;MATCHSTR&gt;&gt; = '&lt;&lt;FIELD&gt;&gt;'] 
+| table Name Namespace UUID Created label_* "Cluster IP" "Traffic Policy" Type selector_* 
+| transpose 
+| rename column as Key "row 1" as Value</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">20</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+      <table>
+        <title>Ports</title>
+        <search>
+          <query>`k8s-event-index` sourcetype="kube:objects:services" metadata.uid="$service_uuid$" 
+| head 1 
+| eval ports = mvzip('spec.ports{}.name', 'spec.ports{}.port', ":"), ports = mvzip(ports, 'spec.ports{}.targetPort', ":"), ports = mvzip(ports, 'spec.ports{}.nodePort', ":"), ports = mvzip(ports, 'spec.ports{}.protocol', ":") 
+| mvexpand ports
+| rex field=ports "(?P&lt;name&gt;[^:]+):(?P&lt;port&gt;[^:]+):(?P&lt;targetPort&gt;[^:]+):(?P&lt;nodePort&gt;[^:]+):(?P&lt;protocol&gt;[^$$]+)$$" 
+| table name port protocol targetPort nodePort</query>
+          <earliest>-60m@m</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">20</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <html>
+        <h1 align="center">Pods</h1>
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Pods Overview</title>
+      <table>
+        <title>Click to Show Pod Detail</title>
+        <search>
+          <query>`k8s-event-index` sourcetype="kube:objects:pods"
+| stats latest(status.phase) as Status latest(metadata.creationTimestamp) as Created by metadata.namespace metadata.name metadata.uid
+| rename metadata.name as Name metadata.namespace as Namespace metadata.uid as UUID spec.nodeName as Node</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">row</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+        <drilldown>
+          <set token="pod_uuid">$row.UUID$</set>
+          <set token="pod_name">$row.Name$</set>
+        </drilldown>
+      </table>
+    </panel>
+    <panel depends="$pod_uuid$">
+      <title>Pod Detail</title>
+      <table>
+        <title>Details of Pod: $pod_name$</title>
+        <search>
+          <query>`k8s-event-index` sourcetype="kube:objects:pods" metadata.uid="$pod_uuid$" 
+| head 1 
+| rename metadata.name as Name metadata.namespace as Namespace metadata.uid as UUID metadata.creationTimestamp as Created spec.nodeName as Node spec.serviceAccount as "Service Account" status.phase as Status status.hostIP as "Host IP" status.podIP as "Pod IP" status.startTime as "Start Time"
+| table Name Namespace UUID Created Node "Service Account" Status "Host IP" "Pod IP" "Start Time" 
+| transpose 
+| rename column as Key "row 1" as Value</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">20</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+      <table>
+        <title>Containers</title>
+        <search>
+          <query>`k8s-event-index` sourcetype="kube:objects:pods" metadata.uid="$pod_uuid$" 
+| head 1 
+| eval containers = mvzip('spec.containers{}.name', 'spec.containers{}.image', "|") 
+| mvexpand containers 
+| eval Port = mvzip('spec.containers{}.ports{}.containerPort', 'spec.containers{}.ports{}.protocol', "/") 
+| rex field=containers "(?P&lt;Name&gt;[^\|]+)\|(?P&lt;Image&gt;[^$$]+)$$" 
+| table Name Image Port</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">20</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+</dashboard>

@@ -1,0 +1,103 @@
+<form>
+  <label>Kubernetes Operation Monitoring</label>
+  <fieldset submitButton="false">
+    <input type="time" token="time">
+      <label></label>
+      <default>
+        <earliest>-60m@m</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <table>
+        <search>
+          <query>index = k8s_events sourcetype="kube:kube-controller-manager" module="event.go" 
+| rex "Kind:\"(?P&lt;Kind&gt;[^\"]+)\", Namespace:\"(?P&lt;Namespace&gt;[^\"]+)\", Name:\"(?P&lt;Name&gt;[^\"]+)\", UID:\"(?P&lt;UID&gt;[^\"]+)\", APIVersion:\"(?P&lt;APIVersion&gt;[^\"]+)\", ResourceVersion:\"(?P&lt;ResourceVersion&gt;[^\"]+)\", FieldPath:\"(?P&lt;FieldPath&gt;[^\"]*)\"" 
+| rex "type: \'(?P&lt;type&gt;[^\']+)\' reason: \'(?P&lt;reason&gt;[^\']+)\' (?P&lt;message&gt;[^$$]+)" 
+| table _time severity message type reason Kind Namespace Name</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Error Messages</title>
+      <table>
+        <search>
+          <query>`k8s-event-index` sourcetype="kube:kube-controller-manager" (severity="ERROR" OR severity="WARN") 
+| rex "[^:]+:\w+\]\s+(?P&lt;message&gt;[^$$]+)$$" 
+| table _time severity message</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <input type="dropdown" token="metric_name">
+        <label>Metric Name</label>
+        <fieldForLabel>merric_name</fieldForLabel>
+        <fieldForValue>metric_name</fieldForValue>
+        <search>
+          <query>| mcatalog values(metric_name) as metric_name where `k8s-metrics-index` 
+| mvexpand metric_name</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+      </input>
+      <input type="dropdown" token="dimension">
+        <label>Split by</label>
+        <fieldForLabel>dimension</fieldForLabel>
+        <fieldForValue>dimension</fieldForValue>
+        <search>
+          <query>| mcatalog values(_dims) as dimension where `k8s-metrics-index` 
+| mvexpand dimension</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+        </search>
+      </input>
+      <chart>
+        <title>kube.node.cpu.usage_rate by node</title>
+        <search>
+          <query>| mstats max(_value) prestats=true WHERE metric_name="$metric_name$" index="k8s_metrics" span=10s BY "$dimension$" 
+| timechart max(_value) as "Max" agg=max limit=5 useother=false span=10s BY "node"</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="charting.axisY.abbreviation">auto</option>
+        <option name="charting.axisY.includeZero">1</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.nullValueMode">connect</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.fieldColors">{"ip-10-0-1-132_us-west-2_compute_internal":"#1e93c6","ip-10-0-1-150_us-west-2_compute_internal":"#f2b827","ip-10-0-1-212_us-west-2_compute_internal":"#d6563c"}</option>
+        <option name="charting.gridLinesX.showMajorLines">1</option>
+        <option name="charting.legend.mode">seriesCompare</option>
+        <option name="displayview">analysis_workspace</option>
+        <option name="refresh.display">progressbar</option>
+      </chart>
+    </panel>
+  </row>
+</form>
