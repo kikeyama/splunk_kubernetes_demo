@@ -1,0 +1,150 @@
+<form stylesheet="k8s_demo_style.css">
+  <label>Pod Detail</label>
+  <fieldset submitButton="false">
+    <input type="time" token="time" searchWhenChanged="true">
+      <label>Date/Time</label>
+      <default>
+        <earliest>-60m@m</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+    <input type="dropdown" token="namespace_name" searchWhenChanged="true">
+      <label>Namespace</label>
+      <choice value="*">ALL</choice>
+      <default>*</default>
+      <fieldForLabel>namespace</fieldForLabel>
+      <fieldForValue>namespace</fieldForValue>
+      <search>
+        <query>| inputlookup pods_lookup.csv 
+| dedup namespace</query>
+        <earliest>0</earliest>
+        <latest></latest>
+      </search>
+    </input>
+    <input type="dropdown" token="pod_name" searchWhenChanged="true">
+      <label>Pod</label>
+      <choice value="*">ALL</choice>
+      <default>*</default>
+      <fieldForLabel>pod</fieldForLabel>
+      <fieldForValue>pod</fieldForValue>
+      <search>
+        <query>| inputlookup pods_lookup.csv 
+| search namespace="$namespace_name$"</query>
+        <earliest>0</earliest>
+        <latest></latest>
+      </search>
+    </input>
+  </fieldset>
+  <row>
+    <panel>
+      <input type="radio" token="func">
+        <label></label>
+        <choice value="avg">Average</choice>
+        <choice value="max">Max</choice>
+        <choice value="p95">95 Percentile</choice>
+        <default>avg</default>
+      </input>
+      <chart>
+        <title>Pod CPU Usage (Pod: $pod_name$)</title>
+        <search>
+          <query>| mstats $func$(_value) prestats=true WHERE namespace="$namespace_name$" AND pod="$pod_name$" AND metric_name="kube.pod.cpu.usage_rate" `k8s-metrics-index` span=10s
+| timechart $func$(_value) as "$func$" span=10s</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+        </search>
+        <option name="charting.axisY.abbreviation">auto</option>
+        <option name="charting.axisY.includeZero">1</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.nullValueMode">connect</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.fieldColors">{"Avg":"#a65c7d"}</option>
+        <option name="charting.gridLinesX.showMajorLines">1</option>
+        <option name="charting.legend.mode">seriesCompare</option>
+        <!--        <option name="displayview">analysis_workspace</option> -->
+        <option name="refresh.display">progressbar</option>
+      </chart>
+      <chart>
+        <title>Pod Memory Usage (Pod: $pod_name$)</title>
+        <search>
+          <query>| mstats $func$(_value) prestats=true WHERE namespace="$namespace_name$" AND pod="$pod_name$" AND metric_name="kube.pod.memory.usage" `k8s-metrics-index` span=10s
+| timechart $func$(_value) as "$func$" span=10s</query>
+          <earliest>-1h</earliest>
+        </search>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.chart">line</option>
+        <option name="charting.chart.nullValueMode">connect</option>
+        <option name="charting.fieldColors">{"Avg":"#a65c7d"}</option>
+        <option name="charting.gridLinesX.showMajorLines">true</option>
+        <option name="charting.axisY.abbreviation">auto</option>
+        <option name="charting.axisY.includeZero">true</option>
+        <option name="charting.legend.mode">seriesCompare</option>
+        <!--        <option name="displayview">analysis_workspace</option> -->
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Logs</title>
+      <input type="link" token="logs" id="pod_status_link_logs">
+        <label>Log Type</label>
+        <choice value="container">Container</choice>
+        <choice value="kubelet">Kubelet</choice>
+        <change>
+          <condition value="container">
+            <set token="showContainer">true</set>
+            <unset token="showKubelet"></unset>
+          </condition>
+          <condition value="kubelet">
+            <unset token="showContainer"></unset>
+            <set token="showKubelet">true</set>
+          </condition>
+        </change>
+        <default>container</default>
+      </input>
+      <event depends="$showContainer$">
+        <title>Container Logs (Pod: $pod_name$)</title>
+        <search>
+          <query>`k8s-event-index` 
+    [search `k8s-event-index` sourcetype="kube:objects:pods" metadata.name="$pod_name$" earliest=-60m@m latest=now 
+    | head 1 
+    | mvexpand spec.containers{}.name 
+    | eval sourcetype = "kube:container:" . 'spec.containers{}.name' 
+    | table sourcetype] 
+| search pod="$pod_name$" namespace="$namespace_name$"</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">20</option>
+        <option name="list.drilldown">none</option>
+        <option name="list.wrap">1</option>
+        <option name="maxLines">5</option>
+        <option name="raw.drilldown">full</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">0</option>
+        <option name="table.drilldown">all</option>
+        <option name="table.sortDirection">asc</option>
+        <option name="table.wrap">1</option>
+        <option name="type">list</option>
+      </event>
+      <table depends="$showKubelet$">
+        <title>Kubelet Logs (Pod: $pod_name$)</title>
+        <search>
+          <query>`k8s-event-index` (sourcetype="kube:kubelet" OR sourcetype="kube") "$pod_name$"
+| rex "\]\s+(?P&lt;message&gt;[^$$]+)$$" 
+| table _time severity module message</query>
+          <earliest>$time.earliest$</earliest>
+          <latest>$time.latest$</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">20</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">true</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">true</option>
+        <option name="wrap">true</option>
+      </table>
+    </panel>
+  </row>
+</form>

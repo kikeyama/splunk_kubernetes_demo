@@ -1,4 +1,4 @@
-<dashboard>
+<dashboard stylesheet="k8s_demo_style.css">
   <label>Kubernetes Overview</label>
   <row>
     <panel>
@@ -121,7 +121,7 @@
   <row>
     <panel>
       <html>
-        <h1 align="center">Nodes</h1>
+        <h1 class="kubernetes_overview_separator">Nodes</h1>
       </html>
     </panel>
   </row>
@@ -196,7 +196,7 @@
   <row>
     <panel>
       <html>
-        <h1 align="center">Namespace</h1>
+        <h1 class="kubernetes_overview_separator">Namespace</h1>
       </html>
     </panel>
   </row>
@@ -269,7 +269,7 @@
   <row>
     <panel>
       <html>
-        <h1 align="center">Services</h1>
+        <h1 class="kubernetes_overview_separator">Services</h1>
       </html>
     </panel>
   </row>
@@ -356,7 +356,7 @@
   <row>
     <panel>
       <html>
-        <h1 align="center">Pods</h1>
+        <h1 class="kubernetes_overview_separator">Pods</h1>
       </html>
     </panel>
   </row>
@@ -389,6 +389,7 @@
         <drilldown>
           <set token="pod_uuid">$row.UUID$</set>
           <set token="pod_name">$row.Name$</set>
+          <set token="pod_namespace">$row.Namespace$</set>
         </drilldown>
       </table>
     </panel>
@@ -442,6 +443,9 @@
         <option name="totalsRow">false</option>
         <option name="wrap">true</option>
       </table>
+      <html>
+        <div><a href="pod_detail?form.namespace_name=$pod_namespace$&amp;form.pod_name=$pod_name$" target="_blank">Inspect this pod's logs and metrics</a></div>
+      </html>
     </panel>
   </row>
 </dashboard>
