@@ -18,7 +18,7 @@ modtime = 1530798098.780801000
 [views/kubernetes_operation_monitoring]
 owner = kikeyama@splunk.com
 version = 7.1.1
-modtime = 1530752003.888576000
+modtime = 1530805105.088101000
 
 [views/pod_status]
 owner = kikeyama@splunk.com
@@ -51,3 +51,7 @@ modtime = 1530783924.580199000
 [savedsearches/pods_summary]
 version = 7.1.1
 modtime = 1530751656.352869000
+
+[views/pod_detail]
+version = 7.1.1
+modtime = 1530804314.618004000

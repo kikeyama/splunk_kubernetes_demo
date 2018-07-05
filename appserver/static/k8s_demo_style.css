@@ -3,6 +3,11 @@
 /*  background-color: #bbbbbb; */
 }
 
+.pod_detail_separator {
+  text-align: center;
+/*  background-color: #bbbbbb; */
+}
+
 #pod_status_link_logs {
   width: 360px;
 }

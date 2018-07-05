@@ -1,4 +1,7 @@
 <form>
+  <init>
+    <set token="dimension"></set>
+  </init>
   <label>Kubernetes Operation Monitoring</label>
   <fieldset submitButton="false">
     <input type="time" token="time">
@@ -36,10 +39,18 @@
   <row>
     <panel>
       <title>Error Messages</title>
+      <input type="radio" token="labelonly">
+        <label>Message Cluster</label>
+        <choice value="false">On</choice>
+        <choice value="true">Off</choice>
+        <default>true</default>
+      </input>
       <table>
         <search>
           <query>`k8s-event-index` sourcetype="kube:kube-controller-manager" (severity="ERROR" OR severity="WARN") 
 | rex "[^:]+:\w+\]\s+(?P&lt;message&gt;[^$$]+)$$" 
+| cluster field=message t=0.9 labelonly=$labelonly$ showcount=true 
+| eval labelonly = "$labelonly$", message = if(labelonly="false", message . " (count: " . cluster_count . ")", message) 
 | table _time severity message</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
@@ -80,12 +91,13 @@
           <earliest>-24h@h</earliest>
           <latest>now</latest>
         </search>
+        <prefix>BY </prefix>
       </input>
       <chart>
         <title>kube.node.cpu.usage_rate by node</title>
         <search>
-          <query>| mstats max(_value) prestats=true WHERE metric_name="$metric_name$" index="k8s_metrics" span=10s BY "$dimension$" 
-| timechart max(_value) as "Max" agg=max limit=5 useother=false span=10s BY "node"</query>
+          <query>| mstats max(_value) prestats=true WHERE metric_name="$metric_name$" index="k8s_metrics" span=10s $dimension$ 
+| timechart max(_value) as "Max" agg=max limit=5 useother=false span=10s $dimension$</query>
           <earliest>$time.earliest$</earliest>
           <latest>$time.latest$</latest>
         </search>
@@ -97,8 +109,8 @@
         <option name="charting.fieldColors">{"ip-10-0-1-132_us-west-2_compute_internal":"#1e93c6","ip-10-0-1-150_us-west-2_compute_internal":"#f2b827","ip-10-0-1-212_us-west-2_compute_internal":"#d6563c"}</option>
         <option name="charting.gridLinesX.showMajorLines">1</option>
         <option name="charting.legend.mode">seriesCompare</option>
-        <option name="displayview">analysis_workspace</option>
         <option name="refresh.display">progressbar</option>
+        <option name="displayview">analysis_workspace</option>
       </chart>
     </panel>
   </row>

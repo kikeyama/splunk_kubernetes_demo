@@ -37,6 +37,13 @@
   </fieldset>
   <row>
     <panel>
+      <html>
+        <h1 class="pod_detail_separator">Metrics</h1>
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
       <input type="radio" token="func">
         <label></label>
         <choice value="avg">Average</choice>
@@ -60,7 +67,7 @@
         <option name="charting.fieldColors">{"Avg":"#a65c7d"}</option>
         <option name="charting.gridLinesX.showMajorLines">1</option>
         <option name="charting.legend.mode">seriesCompare</option>
-        <!--        <option name="displayview">analysis_workspace</option> -->
+<!--        <option name="displayview">analysis_workspace</option> -->
         <option name="refresh.display">progressbar</option>
       </chart>
       <chart>
@@ -84,7 +91,13 @@
   </row>
   <row>
     <panel>
-      <title>Logs</title>
+      <html>
+        <h1 class="pod_detail_separator">Logs</h1>
+      </html>
+    </panel>
+  </row>
+  <row>
+    <panel>
       <input type="link" token="logs" id="pod_status_link_logs">
         <label>Log Type</label>
         <choice value="container">Container</choice>
