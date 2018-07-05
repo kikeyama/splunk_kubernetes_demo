@@ -11,6 +11,7 @@
   </fieldset>
   <row>
     <panel>
+      <title>Kubernetes Controller Manager Logs</title>
       <table>
         <search>
           <query>index = k8s_events sourcetype="kube:kube-controller-manager" module="event.go" 
@@ -57,6 +58,7 @@
   </row>
   <row>
     <panel>
+      <title>Metrics Timechart</title>
       <input type="dropdown" token="metric_name">
         <label>Metric Name</label>
         <fieldForLabel>merric_name</fieldForLabel>
@@ -73,7 +75,7 @@
         <fieldForLabel>dimension</fieldForLabel>
         <fieldForValue>dimension</fieldForValue>
         <search>
-          <query>| mcatalog values(_dims) as dimension where `k8s-metrics-index` 
+          <query>| mcatalog values(_dims) as dimension where `k8s-metrics-index` AND metric_name="$metric_name$" 
 | mvexpand dimension</query>
           <earliest>-24h@h</earliest>
           <latest>now</latest>
@@ -90,7 +92,7 @@
         <option name="charting.axisY.abbreviation">auto</option>
         <option name="charting.axisY.includeZero">1</option>
         <option name="charting.chart">line</option>
-        <option name="charting.chart.nullValueMode">connect</option>
+        <option name="charting.chart.nullValueMode">zero</option>
         <option name="charting.drilldown">none</option>
         <option name="charting.fieldColors">{"ip-10-0-1-132_us-west-2_compute_internal":"#1e93c6","ip-10-0-1-150_us-west-2_compute_internal":"#f2b827","ip-10-0-1-212_us-west-2_compute_internal":"#d6563c"}</option>
         <option name="charting.gridLinesX.showMajorLines">1</option>
@@ -98,6 +100,83 @@
         <option name="displayview">analysis_workspace</option>
         <option name="refresh.display">progressbar</option>
       </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Pods Growth by Node</title>
+      <chart>
+        <search>
+          <query>`k8s-event-index` sourcetype="kube:objects:pods" 
+| timechart dc(metadata.uid) as dc_uid by spec.nodeName</query>
+          <earliest>-24h@h</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="charting.axisLabelsX.majorLabelStyle.overflowMode">ellipsisNone</option>
+        <option name="charting.axisLabelsX.majorLabelStyle.rotation">0</option>
+        <option name="charting.axisTitleX.visibility">visible</option>
+        <option name="charting.axisTitleY.visibility">visible</option>
+        <option name="charting.axisTitleY2.visibility">visible</option>
+        <option name="charting.axisX.abbreviation">none</option>
+        <option name="charting.axisX.scale">linear</option>
+        <option name="charting.axisY.abbreviation">none</option>
+        <option name="charting.axisY.scale">linear</option>
+        <option name="charting.axisY2.abbreviation">none</option>
+        <option name="charting.axisY2.enabled">0</option>
+        <option name="charting.axisY2.scale">inherit</option>
+        <option name="charting.chart">area</option>
+        <option name="charting.chart.bubbleMaximumSize">50</option>
+        <option name="charting.chart.bubbleMinimumSize">10</option>
+        <option name="charting.chart.bubbleSizeBy">area</option>
+        <option name="charting.chart.nullValueMode">connect</option>
+        <option name="charting.chart.showDataLabels">none</option>
+        <option name="charting.chart.sliceCollapsingThreshold">0.01</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.chart.style">shiny</option>
+        <option name="charting.drilldown">none</option>
+        <option name="charting.layout.splitSeries">0</option>
+        <option name="charting.layout.splitSeries.allowIndependentYRanges">0</option>
+        <option name="charting.legend.labelStyle.overflowMode">ellipsisMiddle</option>
+        <option name="charting.legend.mode">standard</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="charting.lineWidth">2</option>
+        <option name="trellis.enabled">0</option>
+        <option name="trellis.scales.shared">1</option>
+        <option name="trellis.size">medium</option>
+      </chart>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>Replication Status</title>
+      <table>
+        <search>
+          <query>`k8s-event-index` sourcetype="kube:objects:replica_sets" 
+| rename status.replicas as current spec.replicas as desired 
+| stats latest(current) as current latest(desired) as desired latest(_time) as as_of by metadata.namespace metadata.name metadata.uid 
+| join metadata.uid type=outer 
+    [search `k8s-event-index` sourcetype="kube:objects:pods" metadata.ownerReferences{}.kind="ReplicaSet" 
+    | spath path=status.containerStatuses{}.state output=state 
+    | rex field=state "^\{\"(?P&lt;status&gt;[^\"]+)\":(?P&lt;status_detail&gt;[\s\S]+)\}$" 
+    | chart dc(metadata.uid) as dc_uid over metadata.ownerReferences{}.uid by status 
+    | rename metadata.ownerReferences{}.uid as metadata.uid] 
+| eval replica_status = if(desired - current &gt;= 0, "OK", "NG"), as_of = strftime(as_of, "%F %T"), replica_status_flag = if(replica_status="OK", 0, 1) 
+| sort - replica_status_flag 
+| fields - replica_status_flag</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+          <sampleRatio>1</sampleRatio>
+        </search>
+        <option name="count">10</option>
+        <option name="dataOverlayMode">none</option>
+        <option name="drilldown">none</option>
+        <option name="percentagesRow">false</option>
+        <option name="refresh.display">progressbar</option>
+        <option name="rowNumbers">false</option>
+        <option name="totalsRow">false</option>
+        <option name="wrap">true</option>
+      </table>
     </panel>
   </row>
 </form>

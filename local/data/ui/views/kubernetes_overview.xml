@@ -7,7 +7,7 @@
         <search>
           <query>`k8s-event-index` sourcetype="kube:objects:nodes" 
 | stats dc(metadata.name) as nodes_count</query>
-          <earliest>-24h@h</earliest>
+          <earliest>-15m</earliest>
           <latest>now</latest>
           <sampleRatio>1</sampleRatio>
         </search>
@@ -36,7 +36,7 @@
         <search>
           <query>`k8s-event-index` sourcetype="kube:objects:namespaces" 
 | stats dc(metadata.name) as namespaces_count</query>
-          <earliest>-24h@h</earliest>
+          <earliest>-15m</earliest>
           <latest>now</latest>
           <sampleRatio>1</sampleRatio>
         </search>
@@ -65,7 +65,7 @@
         <search>
           <query>`k8s-event-index` sourcetype="kube:objects:services" 
 | stats dc(metadata.name) as services_count</query>
-          <earliest>-24h@h</earliest>
+          <earliest>-15m</earliest>
           <latest>now</latest>
           <sampleRatio>1</sampleRatio>
         </search>
@@ -94,7 +94,7 @@
         <search>
           <query>`k8s-event-index` sourcetype="kube:objects:pods" 
 | stats dc(metadata.name) as pods_count</query>
-          <earliest>-24h@h</earliest>
+          <earliest>-15m</earliest>
           <latest>now</latest>
           <sampleRatio>1</sampleRatio>
         </search>
@@ -366,9 +366,14 @@
       <table>
         <title>Click to Show Pod Detail</title>
         <search>
-          <query>`k8s-event-index` sourcetype="kube:objects:pods"
-| stats latest(status.phase) as Status latest(metadata.creationTimestamp) as Created by metadata.namespace metadata.name metadata.uid
-| rename metadata.name as Name metadata.namespace as Namespace metadata.uid as UUID spec.nodeName as Node</query>
+          <query>`k8s-event-index` sourcetype="kube:objects:pods" 
+| spath path=status.containerStatuses{}.state output=status_json 
+| rex field=status_json "^\{\"(?P&lt;status&gt;[^\"]+)" 
+| stats latest(status) as Status latest(metadata.creationTimestamp) as Created by metadata.namespace metadata.name metadata.uid
+| rename metadata.name as Name metadata.namespace as Namespace metadata.uid as UUID spec.nodeName as Node 
+| eval status_flag = if(Status="running", 0, 1) 
+| sort - status_flag 
+| fields - status_flag</query>
           <earliest>-15m</earliest>
           <latest>now</latest>
           <sampleRatio>1</sampleRatio>
@@ -394,8 +399,11 @@
         <search>
           <query>`k8s-event-index` sourcetype="kube:objects:pods" metadata.uid="$pod_uuid$" 
 | head 1 
-| rename metadata.name as Name metadata.namespace as Namespace metadata.uid as UUID metadata.creationTimestamp as Created spec.nodeName as Node spec.serviceAccount as "Service Account" status.phase as Status status.hostIP as "Host IP" status.podIP as "Pod IP" status.startTime as "Start Time"
-| table Name Namespace UUID Created Node "Service Account" Status "Host IP" "Pod IP" "Start Time" 
+| spath path=status.containerStatuses{}.state output=state 
+| rex field=state "^\{\"(?P&lt;Status&gt;[^\"]+)\":(?P&lt;status_detail&gt;[\s\S]+)\}$" 
+| spath input=status_detail 
+| rename metadata.name as Name metadata.namespace as Namespace metadata.uid as UUID metadata.creationTimestamp as Created spec.nodeName as Node spec.serviceAccount as "Service Account" status.hostIP as "Host IP" status.podIP as "Pod IP" status.startTime as "Start Time" reason as Reason message as Message status.containerStatuses{}.restartCount as "Restart Count" 
+| table Name Namespace UUID Created Node "Service Account" Status Reason Message "Restart Count" "Host IP" "Pod IP" "Start Time" 
 | transpose 
 | rename column as Key "row 1" as Value</query>
           <earliest>-15m</earliest>

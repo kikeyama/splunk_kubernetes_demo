@@ -8,14 +8,46 @@ modtime = 1529548938.378098000
 
 [nav/default]
 version = 7.1.1
-modtime = 1530116944.287667000
+modtime = 1530679897.186217000
 
 [views/kubernetes_overview]
 owner = kikeyama@splunk.com
 version = 7.1.1
-modtime = 1529904578.099024000
+modtime = 1530671295.414623000
 
 [views/kubernetes_operation_monitoring]
 owner = kikeyama@splunk.com
 version = 7.1.1
-modtime = 1530165080.961837000
+modtime = 1530752003.888576000
+
+[views/pod_status]
+owner = kikeyama@splunk.com
+version = 7.1.1
+modtime = 1530751943.137583000
+
+[indexes/k8s_summary]
+owner = kikeyama@splunk.com
+version = 7.1.1
+modtime = 1530682888.636332000
+
+[savedsearches/pod_lst]
+access = read : [ * ], write : [ admin, power ]
+export = none
+owner = kikeyama@splunk.com
+version = 7.1.1
+modtime = 1530683423.231428000
+
+[savedsearches/pod_lookup]
+access = read : [ * ], write : [ admin, power ]
+export = none
+owner = kikeyama@splunk.com
+version = 7.1.1
+modtime = 1530684745.043808000
+
+[savedsearches/pods_lookup]
+version = 7.1.1
+modtime = 1530751652.385784000
+
+[savedsearches/pods_summary]
+version = 7.1.1
+modtime = 1530751656.352869000

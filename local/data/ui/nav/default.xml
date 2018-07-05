@@ -1,6 +1,7 @@
 <nav search_view="search">
   <view name="kubernetes_overview" default='true' />
   <view name="kubernetes_operation_monitoring" />
+  <view name="pod_status" />
   <view name="search" />
   <view name="analysis_workspace" />
   <view name="datasets" />
